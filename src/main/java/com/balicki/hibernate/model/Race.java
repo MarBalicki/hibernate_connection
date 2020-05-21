@@ -6,5 +6,6 @@ public enum Race {
     GOLDEN_RETRIEVER,
     MOPS,
     JAMNIK,
-    CHIUHUAHUA
+    CHIUHUAHUA,
+    MONGREL
 }
