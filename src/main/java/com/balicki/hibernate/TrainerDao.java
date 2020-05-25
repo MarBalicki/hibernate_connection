@@ -6,8 +6,6 @@ import com.balicki.hibernate.model.Trainer;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -15,67 +13,61 @@ import javax.persistence.criteria.Root;
 import java.util.*;
 
 public class TrainerDao {
+    private EntityDao<Trainer> entityDao = new EntityDao<>();
 
-    public void addTrainer(Scanner scanner) {
+    protected void addTrainer(Scanner scanner) {
         System.out.println("Give data: NAME LAST_NAME SPECIALIZATION " +
-                "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE]");
+                "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE, MAKING_POO_IN_NEIGHBOR_GARDEN]");
         String line = scanner.nextLine();
         String[] data = line.split(" ");
-        Trainer trainer = Trainer.builder()
-                .firstName(data[0])
-                .lastName(data[1])
-                .specialization(Specialization.valueOf(data[2].toUpperCase()))
-                .build();
-        saveOrUpdate(trainer);
-    }
-
-    public void updateTrainer(Scanner scanner) {
-        System.out.println("Which ID You want to update: ");
-        Long id = Long.valueOf(scanner.nextLine());
-        Optional<Trainer> optionalTrainer = findById(id);
-        if (optionalTrainer.isPresent()) {
-            Trainer trainer = optionalTrainer.get();
-            System.out.println("You are trying to edit record: " + trainer);
-            System.out.println("Give data: NAME LAST_NAME SPECIALIZATION " +
-                    "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE]");
-            String line = scanner.nextLine();
-            String[] data = line.split(" ");
-            trainer = Trainer.builder()
+        try {
+            Trainer trainer = Trainer.builder()
                     .firstName(data[0])
                     .lastName(data[1])
                     .specialization(Specialization.valueOf(data[2].toUpperCase()))
-                    .id(id)
                     .build();
-            saveOrUpdate(trainer);
-        } else {
-            System.out.println("Error! Pet with that ID not exist!");
+            entityDao.saveOrUpdate(trainer);
+        } catch (Exception e) {
+            System.out.println("Bad data!");
         }
     }
 
-    private void saveOrUpdate(Trainer trainer) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            session.saveOrUpdate(trainer);
-            transaction.commit();
-        } catch (HibernateException he) {
-            he.printStackTrace();
-            if (transaction != null) {
-                transaction.rollback();
-            }
-        }
-    }
-
-    public void showAllTrainer() {
-        System.out.println("List of trainers: ");
-        getAllTrainers().forEach(System.out::println);
-    }
-
-    public void findTrainerId(Scanner scanner) {
-        System.out.println("Which ID You want to change: ");
+    protected void updateTrainer(Scanner scanner) {
+        System.out.println("Which ID You want to update: ");
         Long id = Long.valueOf(scanner.nextLine());
-        Optional<Trainer> optionalTrainer = findById(id);
+        Optional<Trainer> optionalTrainer = entityDao.findById(Trainer.class, id);
+        if (optionalTrainer.isPresent()) {
+            try {
+                Trainer trainer = optionalTrainer.get();
+                System.out.println("You are trying to edit record: " + trainer);
+                System.out.println("Give data: NAME LAST_NAME SPECIALIZATION " +
+                        "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE, MAKING_POO_IN_NEIGHBOR_GARDEN]");
+                String line = scanner.nextLine();
+                String[] data = line.split(" ");
+                trainer = Trainer.builder()
+                        .firstName(data[0])
+                        .lastName(data[1])
+                        .specialization(Specialization.valueOf(data[2].toUpperCase()))
+                        .id(id)
+                        .build();
+                entityDao.saveOrUpdate(trainer);
+            } catch (Exception e) {
+                System.out.println("Bad data!");
+            }
+        } else {
+            System.out.println("Error! Trainer with that ID not exist!");
+        }
+    }
+
+    protected void showAllTrainer() {
+        System.out.println("List of trainers: ");
+        entityDao.getAll(Trainer.class).forEach(System.out::println);
+    }
+
+    protected void findTrainerId(Scanner scanner) {
+        System.out.println("Which ID are You looking: ");
+        Long id = Long.valueOf(scanner.nextLine());
+        Optional<Trainer> optionalTrainer = entityDao.findById(Trainer.class, id);
         if (optionalTrainer.isPresent()) {
             Trainer trainer = optionalTrainer.get();
             System.out.println(trainer.toString());
@@ -84,60 +76,23 @@ public class TrainerDao {
         }
     }
 
-    private Optional<Trainer> findById(Long id) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        try (Session session = sessionFactory.openSession()) {
-            return Optional.ofNullable(session.get(Trainer.class, id));
-        } catch (HibernateException he) {
-            he.printStackTrace();
-        }
-        return Optional.empty();
-    }
-
-    private List<Trainer> getAllTrainers() {
-        List<Trainer> list = new ArrayList<>();
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        try (Session session = sessionFactory.openSession()) {
-            Query<Trainer> trainerQuery = session.createQuery("SELECT a FROM Trainer a", Trainer.class);
-            list.addAll(trainerQuery.getResultList());
-        } catch (HibernateException he) {
-            he.printStackTrace();
-        }
-        return list;
-    }
-
-    public void deleteTrainer(Scanner scanner) {
+    protected void deleteTrainer(Scanner scanner) {
         System.out.println("Which ID You want to delete: ");
         Long id = Long.valueOf(scanner.nextLine());
-        Optional<Trainer> optionalTrainer = findById(id);
+        Optional<Trainer> optionalTrainer = entityDao.findById(Trainer.class, id);
         if (optionalTrainer.isPresent()) {
             Trainer trainer = optionalTrainer.get();
-            delete(trainer);
+            entityDao.delete(trainer);
         } else {
             System.out.println("Record with that ID not exist!");
         }
     }
 
-    private void delete(Trainer trainer) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            session.delete(trainer);
-            transaction.commit();
-        } catch (HibernateException he) {
-            he.printStackTrace();
-            if (transaction != null) {
-                transaction.rollback();
-            }
-        }
-    }
-
-    public void findSpecialization(Scanner scanner) {
-        System.out.println("Which specialization You are looking for: " +
-                "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE]");
+    protected void findSpecialization(Scanner scanner) {
+        System.out.println("Which specialization are You looking for: " +
+                "[PSYCHOLOGY, BEHAVIORISM, AGGRESSION_MANAGEMENT, TRICK_TRAINING, OBEDIENCE, MAKING_POO_IN_NEIGHBOR_GARDEN]");
         String data = scanner.nextLine();
-        Specialization specialization = Specialization.valueOf(data);
+        Specialization specialization = Specialization.valueOf(data.toUpperCase());
         System.out.println("Founded records: ");
         findBySpecialization(specialization).forEach(System.out::println);
     }
@@ -158,7 +113,22 @@ public class TrainerDao {
         return list;
     }
 
-    public Set<Pet> findPets(Long id) {
+    protected void trainerListOfPets(Scanner scanner) {
+        System.out.println("Give trainer ID: ");
+        Long id = Long.valueOf(scanner.nextLine());
+        try {
+            Optional<Trainer> trainerOptional = entityDao.findById(Trainer.class, id);
+            if (trainerOptional.isPresent()) {
+                findPets(id).forEach(System.out::println);
+            } else {
+                System.out.println("There is no trainer with that ID!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Set<Pet> findPets(Long id) {
         Set<Pet> pets = new HashSet<>();
         SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
         try (Session session = sessionFactory.openSession()) {

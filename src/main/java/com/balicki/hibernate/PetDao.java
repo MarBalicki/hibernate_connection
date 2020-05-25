@@ -5,8 +5,6 @@ import com.balicki.hibernate.model.Race;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -17,109 +15,79 @@ import java.util.Optional;
 import java.util.Scanner;
 
 public class PetDao {
+    EntityDao<Pet> entityDao = new EntityDao<>();
 
-    public void addPet(Scanner scanner) {
-        System.out.println("Give data: NAME AGE OWNER_NAME WEIGHT isPURE_RACE RACE");
+    protected void addPet(Scanner scanner) {
+        System.out.println("Give data: NAME AGE OWNER_NAME WEIGHT isPURE_RACE RACE\n" +
+                "[LABRADOR, HUSKY, GOLDEN_RETRIEVER, MOPS, BASSET, CHIUHUAHUA, MONGREL]");
         String line = scanner.nextLine();
         String[] data = line.split(" ");
-        Pet pet = Pet.builder()
-                .name(data[0])
-                .age(Integer.parseInt(data[1]))
-                .ownerName(data[2])
-                .weight(Double.parseDouble(data[3]))
-                .pureRace(Boolean.parseBoolean(data[4]))
-                .race(Race.valueOf(data[5].toUpperCase()))
-                .build();
-        saveOrUpdate(pet);
-    }
-
-    public void updatePet(Scanner scanner) {
-        System.out.println("Which ID You want to change: ");
-        Long id = Long.valueOf(scanner.nextLine());
-        Optional<Pet> petOptional = findPetById(id);
-        if (petOptional.isPresent()) {
-            Pet pet = petOptional.get();
-            System.out.println("You are tray to edit record: " + pet);
-            System.out.println("Give data: NAME AGE OWNER_NAME WEIGHT isPURE_RACE RACE");
-            String line = scanner.nextLine();
-            String[] data = line.split(" ");
-            pet = Pet.builder()
+        try {
+            Pet pet = Pet.builder()
                     .name(data[0])
                     .age(Integer.parseInt(data[1]))
                     .ownerName(data[2])
                     .weight(Double.parseDouble(data[3]))
                     .pureRace(Boolean.parseBoolean(data[4]))
                     .race(Race.valueOf(data[5].toUpperCase()))
-                    .id(id)
                     .build();
-            saveOrUpdate(pet);
+            entityDao.saveOrUpdate(pet);
+        } catch (Exception e) {
+            System.out.println("Bad data!");
+        }
+    }
+
+    protected void updatePet(Scanner scanner) {
+        System.out.println("Which ID You want to change: ");
+        Long id = Long.valueOf(scanner.nextLine());
+        Optional<Pet> petOptional = entityDao.findById(Pet.class, id);
+        if (petOptional.isPresent()) {
+            try {
+                Pet pet = petOptional.get();
+                System.out.println("You are tray to edit record: " + pet);
+                System.out.println("Give data: NAME AGE OWNER_NAME WEIGHT isPURE_RACE RACE\n" +
+                        "[LABRADOR, HUSKY, GOLDEN_RETRIEVER, MOPS, BASSET, CHIUHUAHUA, MONGREL]");
+                String line = scanner.nextLine();
+                String[] data = line.split(" ");
+                pet = Pet.builder()
+                        .name(data[0])
+                        .age(Integer.parseInt(data[1]))
+                        .ownerName(data[2])
+                        .weight(Double.parseDouble(data[3]))
+                        .pureRace(Boolean.parseBoolean(data[4]))
+                        .race(Race.valueOf(data[5].toUpperCase()))
+                        .id(id)
+                        .build();
+                entityDao.saveOrUpdate(pet);
+            } catch (Exception e) {
+                System.out.println("Bad data!");
+            }
         } else {
             System.out.println("Error! Pet with that ID not exist!");
         }
     }
 
-    private void saveOrUpdate(Pet pet) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        Transaction transaction = null;
-
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            session.saveOrUpdate(pet);
-            transaction.commit();
-        } catch (HibernateException he) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-        }
-    }
-
-    public void showAllPets() {
+    protected void showAllPets() {
         System.out.println("List of all pets: ");
-        getAllPets().forEach(System.out::println);
+        entityDao.getAll(Pet.class).forEach(System.out::println);
     }
 
-    private List<Pet> getAllPets() {
-        List<Pet> list = new ArrayList<>();
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        try (Session session = sessionFactory.openSession()) {
-            Query<Pet> petQuery = session.createQuery("SELECT a FROM Pet a", Pet.class);
-            list.addAll(petQuery.getResultList());
-        } catch (HibernateException he) {
-            he.printStackTrace();
-        }
-        return list;
-    }
-
-    public void deletePet(Scanner scanner) {
+    protected void deletePet(Scanner scanner) {
         System.out.println("Which ID You want to delete: ");
         Long id = Long.valueOf(scanner.nextLine());
-        Optional<Pet> petOptional = findPetById(id);
+        Optional<Pet> petOptional = entityDao.findById(Pet.class, id);
         if (petOptional.isPresent()) {
             Pet pet = petOptional.get();
-            delete(pet);
+            entityDao.delete(pet);
         } else {
             System.out.println("Record with that ID not exist!");
         }
     }
 
-    private void delete(Pet pet) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            session.delete(pet);
-            transaction.commit();
-        } catch (HibernateException he) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-        }
-    }
-
-    public void findPetId(Scanner scanner) {
+    protected void findPetId(Scanner scanner) {
         System.out.println("Which ID You want to change: ");
         Long id = Long.valueOf(scanner.nextLine());
-        Optional<Pet> petOptional = findPetById(id);
+        Optional<Pet> petOptional = entityDao.findById(Pet.class, id);
         if (petOptional.isPresent()) {
             Pet pet = petOptional.get();
             System.out.println(pet.toString());
@@ -128,21 +96,11 @@ public class PetDao {
         }
     }
 
-    private Optional<Pet> findPetById(Long id) {
-        SessionFactory sessionFactory = HibernateUtil.getOurSessionFactory();
-        try (Session session = sessionFactory.openSession()) {
-            return Optional.ofNullable(session.get(Pet.class, id));
-        } catch (HibernateException he) {
-            System.out.println("Record with that ID not exist!");
-            he.printStackTrace();
-        }
-        return Optional.empty();
-    }
-
-    public void findRace(Scanner scanner) {
-        System.out.println("Which race You are looking: ");
+    protected void findRace(Scanner scanner) {
+        System.out.println("Which race You are looking:\n" +
+                "[LABRADOR, HUSKY, GOLDEN_RETRIEVER, MOPS, BASSET, CHIUHUAHUA, MONGREL]");
         String data = scanner.nextLine();
-        Race race = Race.valueOf(data);
+        Race race = Race.valueOf(data.toUpperCase());
         System.out.println("Founded records: ");
         findByRace(race).forEach(System.out::println);
     }
@@ -163,7 +121,7 @@ public class PetDao {
         return list;
     }
 
-    public void pureRace(Scanner scanner) {
+    protected void pureRace(Scanner scanner) {
         System.out.println("Choose true/false: ");
         String data = scanner.nextLine();
         Boolean pureRace = Boolean.parseBoolean(data.toUpperCase());

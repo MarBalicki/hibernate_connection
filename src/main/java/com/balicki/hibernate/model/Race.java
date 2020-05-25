@@ -5,7 +5,7 @@ public enum Race {
     HUSKY,
     GOLDEN_RETRIEVER,
     MOPS,
-    JAMNIK,
+    BASSET,
     CHIUHUAHUA,
-    MONGREL
+    MONGREL;
 }
