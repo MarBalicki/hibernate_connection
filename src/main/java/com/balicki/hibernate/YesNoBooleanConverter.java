@@ -1,4 +1,4 @@
-package com.balicki.hibernate.model;
+package com.balicki.hibernate;
 
 import javax.persistence.AttributeConverter;
 

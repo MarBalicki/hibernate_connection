@@ -1,6 +1,7 @@
-package com.balicki.hibernate.model;
+package com.balicki.hibernate;
 
-import com.balicki.hibernate.HibernateUtil;
+import com.balicki.hibernate.model.Pet;
+import com.balicki.hibernate.model.Race;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -27,7 +28,7 @@ public class PetDao {
                 .ownerName(data[2])
                 .weight(Double.parseDouble(data[3]))
                 .pureRace(Boolean.parseBoolean(data[4]))
-                .race(Race.valueOf(data[5]))
+                .race(Race.valueOf(data[5].toUpperCase()))
                 .build();
         saveOrUpdate(pet);
     }
@@ -48,7 +49,7 @@ public class PetDao {
                     .ownerName(data[2])
                     .weight(Double.parseDouble(data[3]))
                     .pureRace(Boolean.parseBoolean(data[4]))
-                    .race(Race.valueOf(data[5]))
+                    .race(Race.valueOf(data[5].toUpperCase()))
                     .id(id)
                     .build();
             saveOrUpdate(pet);
@@ -165,7 +166,7 @@ public class PetDao {
     public void pureRace(Scanner scanner) {
         System.out.println("Choose true/false: ");
         String data = scanner.nextLine();
-        Boolean pureRace = Boolean.parseBoolean(data);
+        Boolean pureRace = Boolean.parseBoolean(data.toUpperCase());
         System.out.println("Founded records: ");
         findByPureRace(pureRace).forEach(System.out::println);
     }

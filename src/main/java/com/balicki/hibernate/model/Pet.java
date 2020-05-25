@@ -1,11 +1,10 @@
 package com.balicki.hibernate.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.balicki.hibernate.YesNoBooleanConverter;
+import lombok.*;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Data
 @Entity
@@ -31,6 +30,11 @@ public class Pet {
 
     @Enumerated(value = EnumType.STRING)
     private Race race;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private Set<Trainer> trainerSet;
 
 
 }
